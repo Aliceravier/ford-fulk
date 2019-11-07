@@ -38,6 +38,10 @@ public class FordFulk {
         filename = s; // store name of input file
     }
 
+    public Network getNetwork() {
+    	return this.net;
+    }
+    
     /**
      * Read in network from file. See assessed exercise specification for the
      * file format.
