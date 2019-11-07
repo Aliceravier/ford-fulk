@@ -186,10 +186,10 @@ public class FordFulk {
     }
     
     private String getCharForPlurality(Edge edgeToPrint) {
-    	if(edgeToPrint.getFlow() > 1) 
-    		return "s";
-    	else 
+    	if(edgeToPrint.getFlow() == 1) 
     		return "";
+    	else 
+    		return "s";
     }
 
     /**

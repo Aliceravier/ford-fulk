@@ -29,7 +29,26 @@ public class StudentTestFordFulk {
         instance.readNetworkFromFile();
         instance.fordFulkerson();
         instance.printResults();
-        String goal = "The assignment is a valid flow\nA maximum flow has value: 5\nThe flows along the edges are as follows:\n(0,1) 2/2\n(0,3) 4/3\n(1,2) 1/0\n(1,4) 3/2\n(2,5) 2/2\n(3,2) 3/2\n(3,4) 1/1\n(4,3) 1/0\n(4,5) 4/3\n";
+        String goal = "Student 1 is assigned to project 1\r\n" + 
+        		"Student 2 is assigned to project 1\r\n" + 
+        		"Student 3 is assigned to project 2\r\n" + 
+        		"Student 4 is unassigned\r\n" + 
+        		"Student 5 is assigned to project 4\r\n" + 
+        		"Student 6 is assigned to project 5\r\n" + 
+        		"Student 7 is assigned to project 8\r\n" + 
+        		"\r\n" + 
+        		"Project 1 with capacity 2 is assigned 2 students\r\n" + 
+        		"Project 2 with capacity 1 is assigned 1 student\r\n" + 
+        		"Project 3 with capacity 1 is assigned 0 students\r\n" + 
+        		"Project 4 with capacity 1 is assigned 1 student\r\n" + 
+        		"Project 5 with capacity 1 is assigned 1 student\r\n" + 
+        		"Project 6 with capacity 1 is assigned 0 students\r\n" + 
+        		"Project 7 with capacity 1 is assigned 0 students\r\n" + 
+        		"Project 8 with capacity 1 is assigned 1 student\r\n" + 
+        		"\r\n" + 
+        		"Lecturer 1 with capacity 3 is assigned 3 students\r\n" + 
+        		"Lecturer 2 with capacity 2 is assigned 2 students\r\n" + 
+        		"Lecturer 3 with capacity 2 is assigned 1 student";
         String[] goals = goal.split("\\r?\\n");
         String[] out = outContent.toString().split("\\r?\\n");
         // Check first 3 lines;
@@ -38,7 +57,7 @@ public class StudentTestFordFulk {
         }
 
         // Count number of lines
-        assertEquals(12, out.length, "Wrong number of lines when printing results");
+        assertEquals(20, out.length, "Wrong number of lines when printing results");
 
         // Now check for the right lines. The assignment does not specify an
         // ordering on the output, so the test does not require one.
