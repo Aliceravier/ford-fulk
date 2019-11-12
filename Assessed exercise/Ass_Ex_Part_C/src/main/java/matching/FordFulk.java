@@ -26,6 +26,8 @@ public class FordFulk {
 	private int numStudents;
 	private int numProjects;
 	private int numLecturers;
+	//map of lecturer labels to lower quotas, serves in creating the residual graph
+	private HashMap<Integer, Integer> lecturerLowerBounds = new HashMap<Integer, Integer>();
 
     /**
      * Instantiates a new FordFulk object.
@@ -47,6 +49,7 @@ public class FordFulk {
     public void readNetworkFromFile() {
         FileReader fr = null;
         Scanner in = null;
+        //lookup for all the students and projects to see if they are Software engineering
         boolean[] isSE;
         // open file with name given by filename
         try {
@@ -54,16 +57,21 @@ public class FordFulk {
                 fr = new FileReader(filename);
                 in = new Scanner(fr);
 
-                // get number of vertices
+                // get number of students
                 String line = in.nextLine();
                 this.numStudents = Integer.parseInt(line);
+                // get number of projects
                 line = in.nextLine();
                 this.numProjects = Integer.parseInt(line);
+                // get number of lecturers
                 line = in.nextLine();
                 this.numLecturers = Integer.parseInt(line);
+                
                 int numTotalVertices = numStudents + numProjects + numLecturers + 2;
+                
+                //initialise SE array
                 isSE = new boolean[numStudents + numProjects + 1];
-                isSE[0] = false; //we want to keep the index of the array the same as the label name for students and projects so set 0 to be false (not an SE student)
+                isSE[0] = false; //we want to keep the index of the array the same as the label name for students and projects so set 0 (the source) to be false (not SE)
 
                 // create new network with desired number of vertices
                 net = new Network(numTotalVertices);
@@ -72,16 +80,24 @@ public class FordFulk {
                 for(int i = 0; i < numStudents; i++) {
                 	line = in.nextLine();
                 	String[] tokens = line.split(" ");
+                	
+                	//get student label
                 	int label = Integer.parseInt(tokens[0]);
+                	
+                	//get if student is SE
                 	isSE[label] = (tokens[1].equals("Y"))? true : false;
+                	
+                	//get student vertex
                 	Vertex student = net.getVertexByIndex(label);
-                	//student.setSE(isSE);
+
+                	//link the student with their chosen projects and the source
                 	int j = 2;
                     while (j < tokens.length) {
-                        // get label of vertex v adjacent to u
+                        // get label project
                         int projectLabel = Integer.parseInt(tokens[j++]) + numStudents;
                         // get corresponding Vertex object
                         Vertex project = net.getVertexByIndex(projectLabel);
+                        //get source vertex
                         Vertex source = net.getSource();
                         
                         //add edge from source to student
@@ -92,19 +108,23 @@ public class FordFulk {
                     }
                 	
                 }
-                //add edges between projects and lecturers (and remove bad ones between students and projects?)
+                //add edges between projects and lecturers
                 for(int i = numStudents; i < numStudents + numProjects; i++) {
                 	line = in.nextLine();
                 	String[] tokens = line.split(" ");
+                	
                 	int label = Integer.parseInt(tokens[0]) + numStudents;
+                	
                 	isSE[label] = (tokens[1].equals("Y"))? true : false;
                 	
                 	Vertex project = net.getVertexByIndex(label);
-                	//project.setSE(isSE);
 
             		// get label of vertex v adjacent to u
                     int lecturerLabel = Integer.parseInt(tokens[2]) + numStudents + numProjects;
+                    
+                    //get capacity of project
                     int capacity = Integer.parseInt(tokens[3]);
+                    
                     // get corresponding Vertex object
                     Vertex lecturer = net.getVertexByIndex(lecturerLabel);
                     
@@ -115,17 +135,23 @@ public class FordFulk {
                 while (in.hasNextLine()) {
                     line = in.nextLine();
                     String[] tokens = line.split(" ");
-                    // this line corresponds to add vertices adjacent to vertex u
+                    // get lecturer number and calculate label of lecturer
                 	int label = Integer.parseInt(tokens[0]) + numStudents + numProjects;
                     // get corresponding Vertex object
                     Vertex lecturer = net.getVertexByIndex(label);
+                    
+                    // get lower bound of lecturer
+                    int lowerBound = Integer.parseInt(tokens[1]);
+                    lecturerLowerBounds.put(label, lowerBound);
 
-                    // get label of vertex v adjacent to u
-                    int capacity = Integer.parseInt(tokens[1]);
-                    // get target Vertex object
+                    // get capacity of lecturer
+                    int capacity = Integer.parseInt(tokens[2]);
+                    // get sink Vertex object
                     Vertex sink = net.getSink();
                     // add edge (lecturer, target) with capacity c to network 
                     net.addEdge(lecturer, sink, capacity);
+                    
+                    
 
                 }
                 //remove unwanted edges for illegal projects between SE students and non-SE projects
@@ -164,7 +190,7 @@ public class FordFulk {
      */
     public void fordFulkerson() {
     	while(true) {
-    		ResidualGraph residualGraph = new ResidualGraph(net);
+    		ResidualGraph residualGraph = new ResidualGraph(net, this.lecturerLowerBounds);
     		LinkedList<Edge> pathToAugment = residualGraph.findAugmentingPath();
     		if(pathToAugment != null) {
     			net.augmentPath(pathToAugment);
@@ -193,12 +219,28 @@ public class FordFulk {
     	else 
     		return "s";
     }
+    
+    private boolean respectsLowerBounds(Network network) {
+    	boolean respectsLB = true;
+    	Iterator<Map.Entry<Integer, Integer>> itr = this.lecturerLowerBounds.entrySet().iterator();
+    	while(itr.hasNext()) {
+    		Map.Entry<Integer, Integer> lecturerBoundPair = (Map.Entry<Integer, Integer>)itr.next();
+    		int lecturerLabel = (Integer)lecturerBoundPair.getKey();
+    		Vertex lecturerVertex = network.getVertexByIndex(lecturerLabel);
+    		Edge lecturerSinkEdge = network.getAdjMatrixEntry(lecturerVertex, network.getSink());
+    		if(lecturerSinkEdge.getFlow() < this.lecturerLowerBounds.get(lecturerLabel)) {
+    			respectsLB = false;
+    		}
+    	}
+    	
+    	return respectsLB;
+    }
 
     /**
      * Print the results of the execution of the Ford-Fulkerson algorithm.
      */
     public void printResults() {
-        if (net.isFlow()) {
+        if (net.isFlow() && respectsLowerBounds(net)) {
         	//looping through all vertices in the graph except source and sink
         	for(int i = 1; i < net.getNumVertices() - 1; i++) {
         		
@@ -238,8 +280,9 @@ public class FordFulk {
         					);
         			}        		
         			else {
-        				System.out.printf("Lecturer %d with capacity %d is assigned %d student%s%n",
+        				System.out.printf("Lecturer %d with lower quota %d and upper quota %d is assigned %d student%s%n",
             					sourceVertex.getLabel() - numStudents - numProjects,
+            					this.lecturerLowerBounds.get(sourceVertex.getLabel()),
             					edgeToPrint.getCap(),
             					edgeToPrint.getFlow(),
             					getCharForPlurality(edgeToPrint)
@@ -251,7 +294,8 @@ public class FordFulk {
 	              
         	}
         } else {
-            System.out.println("The assignment is not a valid flow");
+        	System.out.println("No assignment exists that meets all the lecturer lower quotas");
+
         }
     }
 }

@@ -15,29 +15,61 @@ public class ResidualGraph extends Network {
      *
      * @param net the network
      */
-    public ResidualGraph(Network net) {
+    public ResidualGraph(Network net, HashMap<Integer, Integer> lecturerLowerBounds) {
         super(net.numVertices);
         // for each edge check if something should be added to the residual graph
+        int lecturerToAugment = -1;
         for(int i = 0; i < adjMatrix.length; i++) {
 	    	for(int j = 0; j < adjMatrix[i].length; j++) {
-	    		
+
 	    		Edge currentEdge = net.adjMatrix[i][j];
 	    		
 	    		if(currentEdge == null) {
 	    			continue;
 	    		}
 	    		
+	    		if (lecturerLowerBounds.containsKey(currentEdge.getSourceVertex().getLabel()))
+	    		{
+	    			if (currentEdge.getFlow() < lecturerLowerBounds.get(currentEdge.getSourceVertex().getLabel()))
+	    			{
+	    				/* 
+	    	    		 * if we have found one lecturer who hasn't been filled to capacity 
+	    	    		 * then we only want to augment with paths ending with an edge from the lecturer to the sink so
+	    	    		 * we don't want to add any more lecturer - sink edges.
+	    	    		 * We also only care about a forwards edge since we won't augment on a path from sink -> lecturer.
+	    	    		 */
+	    				lecturerToAugment = currentEdge.getSourceVertex().getLabel();
+	    			}
+	    		}	    		
+	    		
+	    		
 	    		// make a backwards edge if flow is higher than 0 with a capacity of flow
 	    		if(currentEdge.getFlow() > 0) {    			
 	    			addEdge(currentEdge.getTargetVertex(), currentEdge.getSourceVertex(), currentEdge.getFlow());
 	    		}
-	    		// make a forwards edge if capacity - flow (possibleForwardsFlow) is higher than 0 with possibleForwardsFlow capacity
+	    		// make a forwards edge if capacity - flow is higher than 0 with that capacity
 	    		int possibleForwardsFlow = currentEdge.getCap() - currentEdge.getFlow();
 	    		if( possibleForwardsFlow > 0) {
 	    			addEdge(currentEdge.getSourceVertex(), currentEdge.getTargetVertex(), possibleForwardsFlow);	    				    	        
 	    		}
 	    	}
+	    	//if there is a lecturer which doesn't have their lower bound respected, remove the edges for all the other lecturers to the sink
+	    	if(lecturerToAugment != -1) {
+	        	Iterator<Map.Entry<Integer, Integer>> itr = lecturerLowerBounds.entrySet().iterator();
+	        	while(itr.hasNext()) {
+	        		Map.Entry<Integer, Integer> lecturerBoundPair = (Map.Entry<Integer, Integer>)itr.next();
+	        		int lecturerLabel = (Integer)lecturerBoundPair.getKey();
+	        		if(lecturerLabel != lecturerToAugment) {
+	        			//delete lecturer -> sink edge
+	        			this.adjMatrix[lecturerLabel][net.vertices.length - 1] = null;
+	        			this.adjLists.get(lecturerLabel).remove(net.getSink());	        			
+	        		}
+	        	}
+	        }
+	        	
     	}
+        
+        
         
         
     }
