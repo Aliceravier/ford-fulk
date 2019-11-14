@@ -62,30 +62,35 @@ public class ResidualGraph extends Network {
     	//breadth first search through the graph
     	while ((currentVertex.getLabel() != adjLists.size() - 1) && !foundTarget) {
     		
+    		//add the vertices adjacent to the current vertex to the queue
     		for (int i = 0; i < adjLists.get(currentVertex.getLabel()).size(); i++) {
     			Vertex linkedVertex = adjLists.get(currentVertex.getLabel()).get(i);
     			
+    			//don't add a vertex if we have already been through it in our search
     			if(predecessors[linkedVertex.getLabel()] != null) {
     				continue;
     			}
     			search.add(linkedVertex);
     			predecessors[linkedVertex.getLabel()] = currentVertex;
     			
+    			//check if we have found the sink in our search and if so end the search
     			if(linkedVertex.getLabel() == vertices.length - 1) {
     				foundTarget = true;
     				break;
     			}
     		}
     		
-    		if(search.isEmpty() == true) { //there is no augmenting path so we return null
+    		//if we have gone through all the vertices in the queue and the sink wasn't found (there is no augmenting path) return null
+    		if(search.isEmpty() == true) { 
     			return null;
     		}
+    		//otherwise keep searching
     		else {
     			currentVertex = search.remove();
     		}
     	}
     	
-    	//use predecessors to reconstruct the path backwards
+    	//use predecessors to reconstruct the path backwards using a stack
     	Stack<Edge> invPath = new Stack<Edge>();
     	Vertex current = vertices[vertices.length - 1];
     	Vertex predecessor = predecessors[current.getLabel()];

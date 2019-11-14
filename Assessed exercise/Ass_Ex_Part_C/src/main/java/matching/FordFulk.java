@@ -220,14 +220,22 @@ public class FordFulk {
     		return "s";
     }
     
+    /**
+     * Checks if all the lecturers' lower quotas are fulfilled in the network
+     * 
+     * @return whether or not the network respects the lower quotas
+     */
     private boolean respectsLowerBounds(Network network) {
+    	
     	boolean respectsLB = true;
     	Iterator<Map.Entry<Integer, Integer>> itr = this.lecturerLowerBounds.entrySet().iterator();
+    	
     	while(itr.hasNext()) {
     		Map.Entry<Integer, Integer> lecturerBoundPair = (Map.Entry<Integer, Integer>)itr.next();
     		int lecturerLabel = (Integer)lecturerBoundPair.getKey();
     		Vertex lecturerVertex = network.getVertexByIndex(lecturerLabel);
     		Edge lecturerSinkEdge = network.getAdjMatrixEntry(lecturerVertex, network.getSink());
+    		
     		if(lecturerSinkEdge.getFlow() < this.lecturerLowerBounds.get(lecturerLabel)) {
     			respectsLB = false;
     		}

@@ -92,11 +92,15 @@ public class FordFulk {
      */
     public void fordFulkerson() {
     	while(true) {
+    		//create new residual graph
     		ResidualGraph residualGraph = new ResidualGraph(net);
+    		//search for a path to augment on it
     		LinkedList<Edge> pathToAugment = residualGraph.findAugmentingPath();
+    		//if a path was found, augment by that path
     		if(pathToAugment != null) {
     			net.augmentPath(pathToAugment);
     		}
+    		//otherwise the algorithm should terminate
     		else {
     			break;
     		}

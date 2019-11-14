@@ -54,17 +54,25 @@ public class FordFulk {
                 fr = new FileReader(filename);
                 in = new Scanner(fr);
 
-                // get number of vertices
+                // get number of students
                 String line = in.nextLine();
                 this.numStudents = Integer.parseInt(line);
+                // get number of projects
                 line = in.nextLine();
                 this.numProjects = Integer.parseInt(line);
                 line = in.nextLine();
+                // get number of lecturers
                 this.numLecturers = Integer.parseInt(line);
+                
+                //calculate total vertices
                 int numTotalVertices = numStudents + numProjects + numLecturers + 2;
+                
+                //initialise array to store what is SE
                 isSE = new boolean[numStudents + numProjects + 1];
-                isSE[0] = false; //we want to keep the index of the array the same as the label name for students and projects so set 0 to be false (not an SE student)
-
+                
+                //we want to keep the index of the array the same as the label name for students and projects so set 0 (the source) to be false (not an SE student)
+                isSE[0] = false; 
+                
                 // create new network with desired number of vertices
                 net = new Network(numTotalVertices);
 
@@ -72,57 +80,70 @@ public class FordFulk {
                 for(int i = 0; i < numStudents; i++) {
                 	line = in.nextLine();
                 	String[] tokens = line.split(" ");
+                	
+                	//get student label
                 	int label = Integer.parseInt(tokens[0]);
+                	
+                	//set if student is SE
                 	isSE[label] = (tokens[1].equals("Y"))? true : false;
+                	
+                	//get student vertex
                 	Vertex student = net.getVertexByIndex(label);
-                	//student.setSE(isSE);
+                	
                 	int j = 2;
                     while (j < tokens.length) {
-                        // get label of vertex v adjacent to u
+                        // get label of project
                         int projectLabel = Integer.parseInt(tokens[j++]) + numStudents;
                         // get corresponding Vertex object
                         Vertex project = net.getVertexByIndex(projectLabel);
+                        //get source
                         Vertex source = net.getSource();
                         
                         //add edge from source to student
                         net.addEdge(source, student, 1);
                         // add edge (student, project) with capacity 1 to network 
-                        net.addEdge(student, project, 1);
-                        
+                        net.addEdge(student, project, 1);                       
                     }
                 	
                 }
-                //add edges between projects and lecturers (and remove bad ones between students and projects?)
+                //add edges between projects and lecturers
                 for(int i = numStudents; i < numStudents + numProjects; i++) {
                 	line = in.nextLine();
                 	String[] tokens = line.split(" ");
+                	//get project label
                 	int label = Integer.parseInt(tokens[0]) + numStudents;
+                	//store if project is SE
                 	isSE[label] = (tokens[1].equals("Y"))? true : false;
                 	
+                	//get project vertex
                 	Vertex project = net.getVertexByIndex(label);
-                	//project.setSE(isSE);
 
-            		// get label of vertex v adjacent to u
+            		// get label of lecturer
                     int lecturerLabel = Integer.parseInt(tokens[2]) + numStudents + numProjects;
-                    int capacity = Integer.parseInt(tokens[3]);
-                    // get corresponding Vertex object
+                    // get lecturer vertex
                     Vertex lecturer = net.getVertexByIndex(lecturerLabel);
+                    //get capacity of project
+                    int capacity = Integer.parseInt(tokens[3]);
+                    
                     
                     // add edge (project, lecturer) with capacity of project to network 
                     net.addEdge(project, lecturer, capacity);
                 }
+                
                 //add edges from lecturers to target
                 while (in.hasNextLine()) {
                     line = in.nextLine();
                     String[] tokens = line.split(" ");
-                    // this line corresponds to add vertices adjacent to vertex u
+                    
+                    // get lecturer label
                 	int label = Integer.parseInt(tokens[0]) + numStudents + numProjects;
+                	
                     // get corresponding Vertex object
                     Vertex lecturer = net.getVertexByIndex(label);
 
-                    // get label of vertex v adjacent to u
+                    // get capacity of lecturer
                     int capacity = Integer.parseInt(tokens[1]);
-                    // get target Vertex object
+                    // get sink Vertex object
                     Vertex sink = net.getSink();
                     // add edge (lecturer, target) with capacity c to network 
                     net.addEdge(lecturer, sink, capacity);
@@ -187,6 +208,12 @@ public class FordFulk {
         return net.getValue();
     }
     
+    /**
+     * Gets if an s should be added to student or not depending if there is one student or not
+     * 
+     * @param edgeToPrint
+     * @return character to add to end of student
+     */
     private String getCharForPlurality(Edge edgeToPrint) {
     	if(edgeToPrint.getFlow() == 1) 
     		return "";
